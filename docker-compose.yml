@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+
+  redis:
+    image: redis:7
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: vote
+      POSTGRES_PASSWORD: vote
+      POSTGRES_DB: votedb
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vote"]
+      interval: 5s
+      retries: 5
+
+  vote:
+    build: ./vote
+    ports:
+      - "5000:80"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+
+  worker:
+    build: ./worker
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+
+  result:
+    build: ./result
+    ports:
+      - "5001:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+
+volumes:
+  db-data:
+
+networks:
+  frontend:
+  backend:
