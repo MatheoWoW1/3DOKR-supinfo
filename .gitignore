@@ -12,3 +12,35 @@
 
 # Logs
 *.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# .NET
+bin/
+obj/
+*.dll
+*.exe
+
+# Docker
+.docker/
+
+# Fichiers temporaires
+*.tmp
+*.swp
+*.swo
+*~

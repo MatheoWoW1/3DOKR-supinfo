@@ -1,53 +1,81 @@
 version: "3.9"
 
 services:
-
-  vote:
-    image: voting-app_vote
-    deploy:
-      replicas: 2
-      restart_policy:
-        condition: on-failure
-    ports:
-      - "5000:80"
-    networks:
-      - frontend
-      - backend
-
-  result:
-    image: voting-app_result
-    deploy:
-      replicas: 2
-      restart_policy:
-        condition: on-failure
-    ports:
-      - "5001:80"
-    networks:
-      - frontend
-      - backend
-
-  worker:
-    image: voting-app_worker
-    deploy:
-      replicas: 1
-    networks:
-      - backend
-
+  # Base de données Redis pour la file d'attente des votes
   redis:
     image: redis:7
     networks:
       - backend
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
 
+  # Base de données PostgreSQL pour le stockage persistant des votes
   db:
     image: postgres:15
+    environment:
+      POSTGRES_USER: vote
+      POSTGRES_PASSWORD: vote
+      POSTGRES_DB: votedb
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
       - backend
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
 
+  # Application web de vote (Python Flask)
+  vote:
+    image: voting-app_vote
+    ports:
+      - "5000:8080"
+    networks:
+      - frontend
+      - backend
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+  # Service worker (.NET) qui transfère les votes de Redis vers PostgreSQL
+  worker:
+    image: voting-app_worker
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  # Application web de résultats (Node.js)
+  result:
+    image: voting-app_result
+    ports:
+      - "5001:8888"
+    networks:
+      - frontend
+      - backend
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+# Volume pour la persistance des données PostgreSQL
 volumes:
   db-data:
 
+# Réseaux overlay pour le cluster Swarm
 networks:
   frontend:
     driver: overlay

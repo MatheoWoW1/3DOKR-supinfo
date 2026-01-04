@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-
+  # Base de données Redis pour la file d'attente des votes
   redis:
     image: redis:7
     networks:
@@ -9,8 +9,11 @@ services:
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
+      timeout: 3s
       retries: 5
+    restart: unless-stopped
 
+  # Base de données PostgreSQL pour le stockage persistant des votes
   db:
     image: postgres:15
     environment:
@@ -22,22 +25,26 @@ services:
     networks:
       - backend
     healthcheck:
-      # Check the correct database instead of the default ("vote"), which avoids repeated FATAL logs
       test: ["CMD-SHELL", "pg_isready -U vote -d votedb"]
       interval: 5s
+      timeout: 3s
       retries: 5
+    restart: unless-stopped
 
+  # Application web de vote (Python Flask)
   vote:
     build: ./vote
     ports:
-      - "5000:8080"  # Flask listens on 8080
+      - "5000:8080"
     depends_on:
       redis:
         condition: service_healthy
     networks:
       - frontend
       - backend
+    restart: unless-stopped
 
+  # Service worker (.NET) qui transfère les votes de Redis vers PostgreSQL
   worker:
     build: ./worker
     depends_on:
@@ -47,21 +54,28 @@ services:
         condition: service_healthy
     networks:
       - backend
+    restart: unless-stopped
 
+  # Application web de résultats (Node.js)
   result:
     build: ./result
     ports:
-      - "5001:8888"  # Node server listens on 8888
+      - "5001:8888"
     depends_on:
       db:
         condition: service_healthy
     networks:
       - frontend
       - backend
+    restart: unless-stopped
 
+# Volume pour la persistance des données PostgreSQL
 volumes:
   db-data:
 
+# Réseaux pour isoler les composants
 networks:
+  # Réseau frontend : accessible par les applications web
   frontend:
+  # Réseau backend : pour les communications internes
   backend:
