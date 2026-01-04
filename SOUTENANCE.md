@@ -15,24 +15,15 @@
 - **Démonstration Live** : 2 minutes
 - **Conclusion** : 1 minute
 
----
+-----------------------------------------------------------------------------
 
 ## 🎯 Slide 1 : Page de Titre (30 secondes)
 
-**À l'écran :**
-```
-Conteneurisation d'une Application de Vote
-Projet Docker & Docker Swarm
-
-[Votre Nom]
-3ème année BUT Informatique
-[Date]
-```
 
 **Ce que vous dites :**
-> "Bonjour, je vais vous présenter mon projet de conteneurisation d'une application distribuée de vote. Ce projet consistait à moderniser le déploiement d'une application multi-services en utilisant Docker et Docker Swarm."
+> "Bonjour, nous allons vous présenter notre projet de conteneurisation d'une application distribuée de vote. Ce projet consistait à moderniser le déploiement d'une application multi-services en utilisant Docker et Docker Swarm."
 
----
+---------------------------------------------------------------------------------
 
 ## 🎯 Slide 2 : Contexte & Objectifs (1 min 30)
 
@@ -52,11 +43,11 @@ Objectifs du Projet
 ```
 
 **Ce que vous dites :**
-> "À l'origine, l'application nécessitait l'exécution manuelle de 5 scripts bash dans des terminaux différents, sans garantie sur l'ordre de démarrage ni sur la persistance des données. Mon objectif était de moderniser ce déploiement en conteneurisant chaque service et en automatisant l'orchestration avec Docker Compose, puis de préparer un déploiement production sur un cluster Docker Swarm."
+> "À l'origine, l'application nécessitait l'exécution manuelle de 5 scripts bash dans des terminaux différents, sans garantie sur l'ordre de démarrage ni sur la persistance des données. Notre objectif était de moderniser ce déploiement en conteneurisant chaque service et en automatisant l'orchestration avec Docker Compose, puis de préparer un déploiement production sur un cluster Docker Swarm."
 
 **💡 Conseil aisance oratoire :** Parlez avec assurance, regardez l'examinateur, pas vos notes.
 
----
+------------------------------------------------------------------------------------
 
 ## 🎯 Slide 3 : Architecture de l'Application (2 min)
 
@@ -85,7 +76,7 @@ Flux de données :
 - Chaque service a une responsabilité unique
 - Communication asynchrone via Redis
 
----
+--------------------------------------------------------------------------------------
 
 ## 🎯 Slide 4 : Choix Techniques - Dockerfiles (3 min)
 
@@ -109,41 +100,21 @@ Result (Node.js)
 ✅ COPY package.json séparément (optimisation cache)
 ```
 
-**Montrez le code à l'écran :**
-
-**vote/Dockerfile :**
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-EXPOSE 8080
-CMD ["python", "app.py"]
-```
-
+**vote/Dockerfile (montrez-le) :**
 **Ce que vous dites :**
-> "Pour le module vote, j'ai utilisé une image Python slim qui est 6 fois plus légère que l'image standard. J'ai séparé la copie du requirements.txt du reste du code pour profiter du cache Docker : si je modifie juste le code, les dépendances ne sont pas réinstallées."
+> "Pour le module vote, nous avons utilisé une image Python slim qui est 6 fois plus légère que l'image standard. Nous avons séparé la copie du requirements.txt du reste du code pour profiter du cache Docker : si on modifie juste le code, les dépendances ne sont pas réinstallées."
 
 **worker/Dockerfile (montrez-le) :**
-```dockerfile
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
-WORKDIR /src
-COPY . .
-RUN dotnet publish -c Release -o /app
-
-FROM mcr.microsoft.com/dotnet/runtime:7.0
-WORKDIR /app
-COPY --from=build /app .
-CMD ["dotnet", "Worker.dll"]
-```
-
 **Ce que vous dites :**
-> "Pour le worker .NET, j'ai utilisé un build multi-stage. La première étape compile avec le SDK qui fait 800MB, mais l'image finale utilise uniquement le runtime qui fait 200MB. Ça réduit considérablement la taille de l'image déployée."
+> "Pour le worker .NET, nous avons utilisé un build multi-stage. La première étape compile avec le SDK qui fait 800MB, mais l'image finale utilise uniquement le runtime qui fait 200MB. Ça réduit considérablement la taille de l'image déployée."
+
+**result/Dockerfile (montrez-le) :**
+**Ce que vous dites :**
+> "Pour le module result, nous avons utilisé une image Alpine qui est extrêmement légère, seulement 20MB de base contre plus de 1GB pour l'image Node standard. Nous avons également séparé la copie des package.json pour optimiser le cache Docker, et nous installons uniquement les dépendances de production avec le flag --production."
 
 **💡 Argumentation :** Insistez sur les gains (temps, espace, sécurité).
 
----
+------------------------------------------------------------------------------------------
 
 ## 🎯 Slide 5 : Docker Compose - Orchestration (3 min)
 
@@ -169,43 +140,12 @@ Docker Compose - Fonctionnalités Clés
    unless-stopped
 ```
 
-**Montrez le code (docker-compose.yml) :**
-```yaml
-db:
-  image: postgres:15
-  environment:
-    POSTGRES_USER: vote
-    POSTGRES_PASSWORD: vote
-    POSTGRES_DB: votedb
-  volumes:
-    - db-data:/var/lib/postgresql/data
-  networks:
-    - backend
-  healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U vote -d votedb"]
-    interval: 5s
-    timeout: 3s
-    retries: 5
-  restart: unless-stopped
-
-worker:
-  build: ./worker
-  depends_on:
-    redis:
-      condition: service_healthy
-    db:
-      condition: service_healthy
-  networks:
-    - backend
-  restart: unless-stopped
-```
-
 **Ce que vous dites :**
-> "Docker Compose orchestre les 5 services. J'ai configuré des dépendances strictes : le worker ne démarre que si Redis et PostgreSQL sont 'healthy', pas juste démarrés. Les health checks vérifient toutes les 5 secondes que les services répondent correctement. Pour la persistance, j'utilise un volume nommé qui survit aux redémarrages. Enfin, j'ai créé deux réseaux isolés : frontend pour les applications web accessibles de l'extérieur, et backend pour les communications internes entre worker, Redis et PostgreSQL."
+> "Docker Compose orchestre les 5 services. Nous avons configuré des dépendances strictes : le worker ne démarre que si Redis et PostgreSQL sont 'healthy', pas juste démarrés. Les health checks vérifient toutes les 5 secondes que les services répondent correctement. Pour la persistance, nous utilisons un volume nommé qui survit aux redémarrages. Enfin, nous avons créé deux réseaux isolés : frontend pour les applications web accessibles de l'extérieur, et backend pour les communications internes entre worker, Redis et PostgreSQL."
 
 **💡 Pertinence :** Expliquez pourquoi c'est important (fiabilité, sécurité).
 
----
+--------------------------------------------------------------------------------
 
 ## 🎯 Slide 6 : Docker Swarm - Production (2 min)
 
@@ -232,45 +172,21 @@ Haute Disponibilité:
 - Redémarrage automatique en cas de panne
 ```
 
-**Montrez le code (docker-compose.swarm.yml) :**
-```yaml
-vote:
-  image: voting-app_vote
-  ports:
-    - "5000:8080"
-  networks:
-    - frontend
-    - backend
-  deploy:
-    replicas: 2
-    restart_policy:
-      condition: on-failure
-    update_config:
-      parallelism: 1
-      delay: 10s
-```
-
 **Ce que vous dites :**
-> "Pour la production, j'ai adapté le fichier pour Docker Swarm avec un cluster de 1 manager et 2 workers. Les applications web vote et result sont répliquées deux fois pour garantir la haute disponibilité. Si un nœud tombe, Swarm redéploie automatiquement les conteneurs sur les nœuds restants. Les mises à jour se font en rolling update : un conteneur à la fois avec un délai de 10 secondes pour éviter les interruptions de service."
+> "Pour la production, nous avons adapté le fichier pour Docker Swarm avec un cluster de 1 manager et 2 workers. Les applications web vote et result sont répliquées deux fois pour garantir la haute disponibilité. Si un nœud tombe, Swarm redéploie automatiquement les conteneurs sur les nœuds restants. Les mises à jour se font en rolling update : un conteneur à la fois avec un délai de 10 secondes pour éviter les interruptions de service." + Processus de déploiement slide suivante
 
 **💡 Différence clé :** Mentionnez que Swarm n'a pas de `build`, d'où la nécessité de construire les images avant.
 
----
+------------------------------------------------------------------------------------------------
 
-## 🎯 Slide 7 : Démonstration Live (2 min)
+## 🎯 Slide 7 : Docker Swarm - Production (2 min)
+````
+Dérouler le procéssus de déploiement Swarm comme il est affiché 
+````
 
-**Préparation avant la soutenance :**
-```bash
-# Terminal 1 - Avoir les commandes prêtes
-cd /home/JeremyDebian/projet_ecole/projet_groupe_Supinfo/3DOKR-supinfo
-docker compose up -d
-```
+------------------------------------------------------------------------------------------------
 
-**Pendant la soutenance :**
-
-**Ce que vous dites :**
-> "Je vais maintenant vous faire une démonstration rapide."
-
+## 🎯 Slide 8: Démonstration Live (2 min)
 **1. Lancement (10 secondes) :**
 ```bash
 docker compose up -d
@@ -307,72 +223,17 @@ docker compose down
 
 **💡 Conseil :** Ayez les onglets de navigateur pré-ouverts pour gagner du temps.
 
----
+-------------------------------------------------------------------------------
 
-## 🎯 Slide 8 : Résultats & Conformité (30 secondes)
 
-**À l'écran :**
-```
-Conformité au Cahier des Charges
-
-✅ 3 Dockerfiles optimisés (9/9 points)
-✅ Docker Compose complet avec dépendances (9/9 points)
-✅ Health checks et persistance (6/6 points)
-✅ 2 réseaux isolés (4/4 points)
-✅ Docker Swarm documenté et testé (10/10 points)
-✅ Documentation complète (2/2 points)
-
-Score attendu: 40/40 points
-```
+## 🎯 Slide 9 : Conclusion (30 secondes)
 
 **Ce que vous dites :**
-> "Mon projet respecte l'intégralité du cahier des charges. Tous les modules sont conteneurisés avec les bonnes pratiques, Docker Compose gère les dépendances et la persistance, et j'ai préparé un déploiement Swarm production-ready avec haute disponibilité."
+> "En conclusion, nous avons transformé un déploiement manuel complexe en une infrastructure moderne, automatisée et hautement disponible. L'application est maintenant prête pour la production. Nous sommes prêts à répondre à vos questions."
 
----
+----------------------------------------------------------------------------------
 
-## 🎯 Slide 9 : Améliorations Futures (30 secondes)
 
-**À l'écran :**
-```
-Pistes d'Amélioration
-
-🔹 Secrets management (Docker secrets au lieu de variables)
-🔹 CI/CD avec GitHub Actions
-🔹 Monitoring (Prometheus + Grafana)
-🔹 Logs centralisés (ELK Stack)
-🔹 Sauvegardes automatisées PostgreSQL
-🔹 HTTPS avec certificats SSL
-```
-
-**Ce que vous dites :**
-> "Pour aller plus loin, on pourrait ajouter la gestion des secrets Docker, mettre en place un pipeline CI/CD, intégrer du monitoring avec Prometheus, et sécuriser les communications avec HTTPS."
-
-**💡 Pourquoi cette slide :** Montre que vous avez une vision complète et que vous savez ce qui manque.
-
----
-
-## 🎯 Slide 10 : Conclusion (30 secondes)
-
-**À l'écran :**
-```
-Conclusion
-
-Avant                    →    Après
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-5 scripts bash           →    1 commande
-Pas de dépendances       →    Orchestration automatique
-Données volatiles        →    Volumes persistants
-Pas de scalabilité       →    Cluster Swarm HA
-Déploiement manuel       →    Infrastructure as Code
-
-Merci de votre attention.
-Questions ?
-```
-
-**Ce que vous dites :**
-> "En conclusion, j'ai transformé un déploiement manuel complexe en une infrastructure moderne, automatisée et hautement disponible. L'application est maintenant prête pour la production. Je suis prêt à répondre à vos questions."
-
----
 
 ## ❓ Préparation Questions/Réponses (5 points)
 
@@ -472,13 +333,11 @@ Questions ?
 
 > "Bonjour [Madame/Monsieur],
 > 
-> Je vais vous présenter aujourd'hui mon projet de conteneurisation d'une application distribuée de vote. Cette application permet à une audience de choisir entre deux options, avec un affichage des résultats en temps réel.
+> Nous allons vous présenter aujourd'hui notre projet de conteneurisation d'une application distribuée de vote. Cette application permet à une audience de choisir entre deux options, avec un affichage des résultats en temps réel.
 > 
-> Le projet initial était déployé via 5 scripts bash à exécuter manuellement. Mon objectif était de moderniser ce déploiement en utilisant Docker et Docker Swarm pour garantir la fiabilité, la scalabilité et la simplicité d'utilisation.
+> Le projet initial était déployé via 5 scripts bash à exécuter manuellement. Notre objectif était de moderniser ce déploiement en utilisant Docker et Docker Swarm pour garantir la fiabilité, la scalabilité et la simplicité d'utilisation.
 > 
-> Ma présentation durera 15 minutes et sera structurée en 4 parties : l'architecture de l'application, les choix techniques pour les Dockerfiles, l'orchestration avec Docker Compose, et enfin le déploiement en cluster Swarm. Je conclurai par une démonstration live de l'application.
-> 
-> Commençons par le contexte du projet."
+> Notre présentation durera 15 minutes et sera structurée en 4 parties : l'architecture de l'application, les choix techniques pour les Dockerfiles, l'orchestration avec Docker Compose, et enfin le déploiement en cluster Swarm. Nous conclurons par une démonstration live de l'application.
 
 ---
 

@@ -79,26 +79,6 @@ docker build -t voting-app_result ./result
 docker build -t voting-app_worker ./worker
 ```
 
-### Option : Utilisation d'un registre Docker
-
-Pour un déploiement sur plusieurs nœuds, il est recommandé d'utiliser un registre Docker :
-
-```bash
-# Lancer un registre local
-docker service create --name registry --publish 5000:5000 registry:2
-
-# Tag et push des images
-docker tag voting-app_vote localhost:5000/voting-app_vote
-docker push localhost:5000/voting-app_vote
-
-docker tag voting-app_result localhost:5000/voting-app_result
-docker push localhost:5000/voting-app_result
-
-docker tag voting-app_worker localhost:5000/voting-app_worker
-docker push localhost:5000/voting-app_worker
-```
-
-Si vous utilisez un registre, modifiez les noms d'images dans `docker-compose.swarm.yml`.
 
 ## Étape 3 : Déploiement de la Stack
 
@@ -252,24 +232,3 @@ docker network inspect voting_frontend
 docker swarm leave --force
 docker system prune -a
 ```
-
-## Différences avec Docker Compose
-
-| Fonctionnalité | Docker Compose | Docker Swarm |
-|----------------|----------------|--------------|
-| `build` | ✅ Supporté | ❌ Pas supporté |
-| `depends_on` | ✅ Supporté | ❌ Ignoré |
-| `healthcheck` | ✅ Supporté | ⚠️ Limité |
-| `deploy` | ❌ Ignoré | ✅ Supporté |
-| Réplication | ❌ Non | ✅ Oui |
-| Rolling updates | ❌ Non | ✅ Oui |
-
-C'est pourquoi nous avons deux fichiers séparés : `docker-compose.yml` pour le développement local et `docker-compose.swarm.yml` pour la production en cluster.
-
-## Conclusion
-
-Ce processus de déploiement permet :
-- ✅ Une haute disponibilité des applications web
-- ✅ Une tolérance aux pannes d'un nœud worker
-- ✅ Une mise à l'échelle facile des services
-- ✅ Une gestion centralisée depuis le nœud manager
