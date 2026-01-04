@@ -12,15 +12,6 @@ Application distribuée permettant à une audience de voter entre deux options. 
 - **redis** : Base de données Redis (file d'attente des votes)
 - **db** : Base de données PostgreSQL (stockage persistant)
 
-### Schéma d'Architecture
-
-```
-┌─────────┐      ┌───────┐      ┌────────┐      ┌──────┐      ┌────────┐
-│  Vote   │─────>│ Redis │─────>│ Worker │─────>│  DB  │<─────│ Result │
-│ (Flask) │      │       │      │ (.NET) │      │ (PG) │      │(Node.js)│
-└─────────┘      └───────┘      └────────┘      └──────┘      └────────┘
-   :5000                                          (volume)         :5001
-```
 
 ## Prérequis
 
@@ -58,7 +49,7 @@ docker compose down -v
 
 ### Dockerfiles
 
-Chaque module possède son propre Dockerfile respectant les bonnes pratiques :
+Chaque module possède son propre Dockerfile :
 
 - **vote** : Image Python 3.11 slim
 - **worker** : Build multi-stage avec .NET 7
@@ -68,11 +59,11 @@ Chaque module possède son propre Dockerfile respectant les bonnes pratiques :
 
 Le fichier `docker-compose.yml` définit :
 
-- ✅ **Dépendances** : Les services démarrent dans le bon ordre grâce à `depends_on` avec `condition: service_healthy`
-- ✅ **Health checks** : Redis et PostgreSQL sont surveillés pour garantir leur disponibilité
-- ✅ **Volumes** : Les données PostgreSQL sont persistées dans un volume Docker
-- ✅ **Réseaux** : Isolation entre frontend et backend
-- ✅ **Restart policy** : Les conteneurs redémarrent automatiquement en cas d'échec
+- **Dépendances** : Les services démarrent dans le bon ordre grâce à `depends_on` avec `condition: service_healthy`
+- **Health checks** : Redis et PostgreSQL sont surveillés pour garantir leur disponibilité
+- **Volumes** : Les données PostgreSQL sont persistées dans un volume Docker
+- **Réseaux** : Isolation entre frontend et backend
+- **Restart policy** : Les conteneurs redémarrent automatiquement en cas d'échec
 
 ### Réseaux
 
@@ -108,5 +99,4 @@ Les scripts bash originaux ont été remplacés par Docker et Docker Compose pou
 - Docker & Docker Compose
 
 ## Auteur
-
-Projet réalisé dans le cadre du cours de conteneurisation - 3ème année BUT Informatique
+Projet réalisé dans le cadre du cours 3DOKR par COUSTEIX Mathéo et JEAN-BAPTISTE-DIT-DALPHRASE Jérémy - PGE3
